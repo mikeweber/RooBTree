@@ -1,6 +1,5 @@
 class Node
-  attr_accessor :owner_leaf
-  attr_reader :value
+  attr_reader :owner_leaf, :value
   
   def initialize(init_value)
     raise "cannot be nil" if init_value.nil?
@@ -18,13 +17,20 @@ class Node
     self.my_index == (self.owner_leaf.size - 1)
   end
   
+  def children
+    [self.left_leaf, self.right_leaf]
+  end
+  
+  def children=(leaves)
+    self.left_leaf, self.right_leaf = leaves
+  end
+  
   def left_leaf
     @left_leaf
   end
   
   def left_leaf=(leaf)
-    assign_leaf(leaf)
-    @left_leat = leaf
+    assign_parent_leaf(@left_leaf = leaf)
   end
   
   def right_leaf
@@ -32,8 +38,15 @@ class Node
   end
   
   def right_leaf=(leaf)
-    assign_leaf(leaf)
-    @right_leaf = leaf
+    assign_parent_leaf(@right_leaf = leaf)
+  end
+  
+  def owner_leaf=(leaf)
+    @owner_leaf = leaf
+    
+    children.each do |child_leaf|
+      assign_parent_leaf(child_leaf)
+    end
   end
   
   def to_s
@@ -46,7 +59,10 @@ class Node
   
   private
   
-  def assign_leaf(leaf)
+  def assign_parent_leaf(leaf)
+    return if leaf.nil?
+    # My child's parent_leaf is the leaf that I am in
     leaf.parent_leaf = self.owner_leaf
+    return leaf
   end
 end

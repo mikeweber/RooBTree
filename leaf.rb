@@ -2,16 +2,17 @@ class Leaf
   instance_methods.each { |m| undef_method m unless m =~ /(^__|^send$|^object_id$)/ }
   
   attr_accessor :tree
-  attr_reader :parent_leaf
   
-  MAX_SIZE = 2
+  MAX_SIZE = 4
   @nodes = []
   
   def initialize(nodes = [], tree = nil)
     raise(ClassMismatch, "Cannot assign a leaf anything other than an array of nodes") unless nodes.is_a?(Array) && (nodes.empty? || nodes.all? { |node| node.is_a?(Node) })
     
     self.tree = tree unless tree.nil?
-    @nodes = nodes
+    (nodes || []).each do |node|
+      self << node
+    end
   end
   
   def parent_leaf
@@ -39,23 +40,34 @@ class Leaf
     raise(ClassMismatch, "Only nodes can be added to leaves") unless node.is_a?(Node)
     
     if self.has_room?
-      puts "leaf has room"
       index = 0
-      if next_leaf = self[index]
-        leaf_value = next_leaf.value
-        while (node.value > leaf_value && index < @nodes.size)
-          puts "checking nodes..."
+      if next_node = self[index]
+        node_value = next_node.value
+        while (node.value > node_value && index < @nodes.size)
           index += 1
-          if next_leaf = self[index]
-            puts "found a node for index #{index}"
-            leaf_value = next_leaf.value
+          if next_node = self[index]
+            node_value = next_node.value
           end
         end
       end
       @nodes.insert(index, node)
       node.owner_leaf = self
+      if index > 0
+        # Unless this node is the first Node in the Leaf, this Node should take over the responsibility of tracking
+        # the previous Node's right leaf as the new Node's left leaf. The position stays the same, but the ownership
+        # stays consistent. All Nodes own the child Leaf to their left, unless they're the last Node in the Leaf. In
+        # that case, they're allowed to track a child Leaf to their right.
+        node.left_leaf ||= @nodes[index - 1].right_leaf
+      end
     else
-      split!(node)
+      median_node = split!(node)
+
+      if self.parent_leaf
+        self.parent_leaf << median_node
+      else
+        new_root = Leaf.new([median_node])
+        self.tree.root = new_root
+      end
     end
     
     return node
@@ -116,19 +128,7 @@ class Leaf
     right_node_start = median_node_index + 1
     
     median_node, temp_left_nodes, temp_right_nodes = [temp_leaf[median_node_index], temp_leaf[0..left_node_end], temp_leaf[right_node_start..-1]]
-    median_node.left_leaf = Leaf.new(temp_left_nodes)
-    median_node.right_leaf = Leaf.new(temp_right_nodes)
-    
-    if self.parent_leaf
-      self.parent_leaf << median_node
-      raise [median_node.value, 
-        self.parent_leaf.first.value, 
-        self.parent_leaf.first.left_leaf, 
-        self.parent_leaf.first.right_leaf].inspect
-    else
-      @nodes = [median_node]
-      self.tree.root = self
-    end
+    median_node.children = [Leaf.new(temp_left_nodes), Leaf.new(temp_right_nodes)]
     
     return median_node
   end
