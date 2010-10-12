@@ -2,6 +2,8 @@ require 'leaf'
 require 'node'
 
 class RooBTree
+  attr_accessor :root
+  
   def initialize(initial_values = [])
     @root = Leaf.new([], self)
     initial_values.each do |value|
@@ -38,14 +40,6 @@ class RooBTree
     # if the recursive function returns false, it means that a child leaf that was recursed on didn't
     # actually exist, so use the leaf that was passed in originally
     return insertion_leaf || leaf
-  end
-  
-  def root=(leaf)
-    @root = leaf
-  end
-  
-  def root
-    @root
   end
   
   def remove(value)

@@ -19,7 +19,8 @@ class Leaf
   end
   
   def parent_leaf=(leaf)
-    self.tree = self.parent_leaf.is_a?(RooBTree) ? self.parent_leaf : self.parent_leaf.tree unless self.parent_leaf.nil?
+    self.tree = leaf.is_a?(RooBTree) ? leaf : leaf.tree unless leaf.nil?
+    @parent_leaf = leaf
   end
   
   def values
@@ -51,34 +52,13 @@ class Leaf
           end
         end
       end
-      self.insert(index, node)
+      @nodes.insert(index, node)
+      node.owner_leaf = self
     else
-      self.split!(node)
+      split!(node)
     end
-    
-    node.owner_leaf = self
     
     return node
-  end
-  
-  def split!(new_node)
-    temp_leaf = (self + [new_node]).sort_by { |node| node.value }
-    median_node_index = (temp_leaf.size / 2)
-    right_node_start = median_node_index + 1
-    left_node_end = median_node_index - 1
-    
-    median_node, temp_left_leaf, temp_right_leaf = [temp_leaf[median_node_index], temp_leaf[0..left_node_end], temp_leaf[right_node_start..-1]]
-    median_node.left_leaf = Leaf.new(temp_left_leaf)
-    median_node.right_leaf = Leaf.new(temp_right_leaf)
-    
-    if self.parent_leaf
-      self.parent_leaf << median_node
-    else
-      @nodes = [median_node]
-      self.tree.root = self
-    end
-    
-    return median_node
   end
   
   def recursive_explanation
@@ -125,5 +105,31 @@ class Leaf
   
   def target
     @nodes ||= []
+  end
+  
+  private
+  
+  def split!(new_node)
+    temp_leaf = (self + [new_node]).sort_by { |node| node.value }
+    median_node_index = (temp_leaf.size / 2)
+    left_node_end = median_node_index - 1
+    right_node_start = median_node_index + 1
+    
+    median_node, temp_left_nodes, temp_right_nodes = [temp_leaf[median_node_index], temp_leaf[0..left_node_end], temp_leaf[right_node_start..-1]]
+    median_node.left_leaf = Leaf.new(temp_left_nodes)
+    median_node.right_leaf = Leaf.new(temp_right_nodes)
+    
+    if self.parent_leaf
+      self.parent_leaf << median_node
+      raise [median_node.value, 
+        self.parent_leaf.first.value, 
+        self.parent_leaf.first.left_leaf, 
+        self.parent_leaf.first.right_leaf].inspect
+    else
+      @nodes = [median_node]
+      self.tree.root = self
+    end
+    
+    return median_node
   end
 end
