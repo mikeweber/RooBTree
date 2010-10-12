@@ -28,12 +28,7 @@ class Node
   end
   
   def right_leaf
-    current_index = my_index
-    if self.last_node?
-      @right_leaf
-    else
-      self.owner_leaf[current_index + 1].left_leaf
-    end
+    @right_leaf
   end
   
   def right_leaf=(leaf)

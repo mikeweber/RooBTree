@@ -44,6 +44,10 @@ class RooBTree
     @root = leaf
   end
   
+  def root
+    @root
+  end
+  
   def remove(value)
     
   end
@@ -54,6 +58,10 @@ class RooBTree
   
   def explain_nodes
     puts @root.recursive_explanation
+  end
+  
+  def explain_nodes_in_html
+    @root.recursive_html_explanation
   end
   
   def to_s

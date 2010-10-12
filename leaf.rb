@@ -38,6 +38,7 @@ class Leaf
     raise(ClassMismatch, "Only nodes can be added to leaves") unless node.is_a?(Node)
     
     if self.has_room?
+      puts "leaf has room"
       index = 0
       if next_leaf = self[index]
         leaf_value = next_leaf.value
@@ -73,6 +74,7 @@ class Leaf
     if self.parent_leaf
       self.parent_leaf << median_node
     else
+      @nodes = [median_node]
       self.tree.root = self
     end
     
@@ -85,6 +87,22 @@ class Leaf
   
   def explanation
     "[#{self.values.join('|')}]"
+  end
+  
+  def recursive_html_explanation
+    s = "<ul>"
+    self.each do |node|
+      s << node.left_leaf.recursive_html_explanation if node.left_leaf
+      s << "<li>#{node.value}</li>"
+      s << node.right_leaf.recursive_html_explanation if node.last_node? && node.right_leaf
+    end
+    s << "</ul>"
+    
+    return s
+  end
+  
+  def html_explanation
+    "<ul>" + self.collect { |node| "<li>#{node.value}<li>" }.join + "</ul>"
   end
   
   def full_array
