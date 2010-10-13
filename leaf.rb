@@ -1,15 +1,13 @@
 class Leaf
   instance_methods.each { |m| undef_method m unless m =~ /(^__|^send$|^object_id$)/ }
   
-  attr_accessor :tree
-  
-  MAX_SIZE = 4
+  MAX_SIZE = 2
   @nodes = []
   
   def initialize(nodes = [], tree = nil)
     raise(ClassMismatch, "Cannot assign a leaf anything other than an array of nodes") unless nodes.is_a?(Array) && (nodes.empty? || nodes.all? { |node| node.is_a?(Node) })
     
-    self.tree = tree unless tree.nil?
+    @tree = tree
     (nodes || []).each do |node|
       self << node
     end
@@ -20,8 +18,11 @@ class Leaf
   end
   
   def parent_leaf=(leaf)
-    self.tree = leaf.is_a?(RooBTree) ? leaf : leaf.tree unless leaf.nil?
     @parent_leaf = leaf
+  end
+  
+  def tree
+    @tree || (self.parent_leaf.tree unless self.parent_leaf.nil?)
   end
   
   def values
@@ -65,7 +66,7 @@ class Leaf
       if self.parent_leaf
         self.parent_leaf << median_node
       else
-        new_root = Leaf.new([median_node])
+        new_root = Leaf.new([median_node], self.tree)
         self.tree.root = new_root
       end
     end
@@ -128,7 +129,7 @@ class Leaf
     right_node_start = median_node_index + 1
     
     median_node, temp_left_nodes, temp_right_nodes = [temp_leaf[median_node_index], temp_leaf[0..left_node_end], temp_leaf[right_node_start..-1]]
-    median_node.children = [Leaf.new(temp_left_nodes), Leaf.new(temp_right_nodes)]
+    median_node.children = [Leaf.new(temp_left_nodes, self.tree), Leaf.new(temp_right_nodes, self.tree)]
     
     return median_node
   end

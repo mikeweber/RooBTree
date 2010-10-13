@@ -61,16 +61,18 @@ describe Leaf do
         Leaf::MAX_SIZE.times do |i|
           values << i
         end
-        leaf = Leaf.new(values.collect { |value| Node.new(value) })
-        node = Node.new(values.max + 1)
-        node.left_leaf = leaf
-        parent_leaf = Leaf.new([node])
-        parent_leaf.values.should == [node.to_s]
-        temp_values = (values + [values.max + 1]).collect { |value| value.to_s }
-        parent_leaf << Node.new(values.min - 1)
-        parent_leaf.values.should == [(values.min - 1).to_s, temp_values[Leaf::MAX_SIZE / 2]]
-        parent_leaf.first.left_leaf.should be_nil
-        left_leaf, right_leaf = [parent_leaf[1].children]
+        child_leaf = Leaf.new(values.collect { |value| Node.new(value) })
+        parent_node = Node.new(values.max + 1)
+        parent_node.left_leaf = child_leaf
+        parent_leaf = Leaf.new([parent_node])
+        parent_leaf.values.should == [parent_node.to_s]
+        temp_values = ([values.min - 1] + values).collect { |value| value.to_s }
+        node_to_cause_split = Node.new(values.min - 1)
+        child_leaf.full?.should be_true
+        child_leaf << node_to_cause_split
+        parent_leaf.values.should == [temp_values[Leaf::MAX_SIZE / 2], parent_node.to_s]
+        parent_leaf.first.left_leaf.should_not be_nil
+        left_leaf, right_leaf = parent_leaf.first.children
         left_leaf.values.should == temp_values[0..(Leaf::MAX_SIZE / 2 - 1)]
         right_leaf.values.should == temp_values[(Leaf::MAX_SIZE / 2 + 1)..-1]
       end
