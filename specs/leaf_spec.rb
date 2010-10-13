@@ -26,6 +26,13 @@ describe Leaf do
     leaf << Node.new(median_node)
   end
   
+  it "should sort a newly added node" do
+    leaf = Leaf.new([Node.new(5)])
+    leaf.values.should == ['5']
+    leaf << Node.new('0')
+    leaf.values.should == ['0', '5']
+  end
+  
   context "when a leaf is full and adding a new node" do
     context "and the leaf has a parent" do
       it "should add the median node to the parent node" do
@@ -47,6 +54,25 @@ describe Leaf do
         median_node.left_leaf.should_not be_nil
         median_node.left_leaf.values.should == nodes[0..(nodes.size / 2 - 1)].collect { |node| node.value.to_s }
         median_node.right_leaf.values.should == nodes[(nodes.size / 2 + 1)..-1].collect { |node| node.value.to_s }
+      end
+      
+      it "should correctly sort the median node" do
+        values = []
+        Leaf::MAX_SIZE.times do |i|
+          values << i
+        end
+        leaf = Leaf.new(values.collect { |value| Node.new(value) })
+        node = Node.new(values.max + 1)
+        node.left_leaf = leaf
+        parent_leaf = Leaf.new([node])
+        parent_leaf.values.should == [node.to_s]
+        temp_values = (values + [values.max + 1]).collect { |value| value.to_s }
+        parent_leaf << Node.new(values.min - 1)
+        parent_leaf.values.should == [(values.min - 1).to_s, temp_values[Leaf::MAX_SIZE / 2]]
+        parent_leaf.first.left_leaf.should be_nil
+        left_leaf, right_leaf = [parent_leaf[1].children]
+        left_leaf.values.should == temp_values[0..(Leaf::MAX_SIZE / 2 - 1)]
+        right_leaf.values.should == temp_values[(Leaf::MAX_SIZE / 2 + 1)..-1]
       end
     end
     

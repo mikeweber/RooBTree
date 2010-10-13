@@ -1,5 +1,5 @@
 class Node
-  attr_reader :owner_leaf, :value
+  attr_reader :owner_leaf
   
   def initialize(init_value)
     raise "cannot be nil" if init_value.nil?
@@ -7,6 +7,10 @@ class Node
     @value = init_value
     @left_leaf = nil
     @right_leaf = nil
+  end
+  
+  def value
+    @value.to_s
   end
   
   def my_index
