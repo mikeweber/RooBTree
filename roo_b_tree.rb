@@ -12,34 +12,50 @@ class RooBTree
   end
   
   def <<(value)
-    return if value.nil?
+    return nil if value.nil?
+    return nil unless leaf = find_insertion_leaf(value.to_s)
     
     new_node = Node.new(value)
-    @root << new_node
-    
+    leaf << new_node
+  
     return new_node
   end
   
+  def size
+    self.root.full_array.size
+  end
+  
+  # recursively determine which leaf to add this value to. returning false means the method lead to a dead end 
+  # i.e. a child leaf was passed in that didn't actually exist. returning nil means the value was found and 
+  # shouldn't be added to the Tree.
   def find_insertion_leaf(value, leaf = @root)
     return false if leaf.nil?
+    return leaf if leaf.empty?
     
-    # if the new value is larger than any value in the leaf, recurse on the right most leaf
-    insertion_leaf = if value > leaf.max
-      find_insertion_leaf(value, leaf.last.right_leaf)
-    else
-      # otherwise walk through the nodes until you find a stored value larger than the value that's
-      # being added. Then add it to that leaf's left leaf.
-      node_index = 0
-      node_value = leaf[node_index]
-      while (value > node_value)
-        node_value = leaf[node_index += 1]
+    
+    # walk through the nodes until you find a stored value larger than the value that's
+    # being added. Then add it to that leaf's left leaf. If the value is larger than all
+    # of the values in this leaf, test the right leaf of the last node.
+    node_index = 0
+    node_value = leaf[node_index].value
+    while (node_value && value > node_value && node_index < leaf.size)
+      if node = leaf[node_index += 1]
+        node_value = node.value
       end
-      leaf[node_index].left_leaf
+    end
+    
+    insertion_leaf = if node_value == value # don't allow duplicate values to be added
+      nil
+    elsif node_index < leaf.size
+      find_insertion_leaf(value, leaf[node_index].left_leaf)
+    else
+      find_insertion_leaf(value, leaf.last.right_leaf)
     end
     
     # if the recursive function returns false, it means that a child leaf that was recursed on didn't
     # actually exist, so use the leaf that was passed in originally
-    return insertion_leaf || leaf
+    # Return nil if insertion_leaf is nil. Otherwise insertion_leaf can either be a Leaf, or false.
+    return insertion_leaf.nil? ? nil : (insertion_leaf || leaf)
   end
   
   def remove(value)

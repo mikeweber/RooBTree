@@ -16,4 +16,15 @@ describe RooBTree do
       end
     end
   end
+  
+  it "should not add duplicate values" do
+    tree = RooBTree.new
+    tree.size.should == 0
+    tree << 0
+    tree.size.should == 1
+    tree << 0
+    tree.size.should == 1
+    tree << 1
+    tree.size.should == 2
+  end
 end
