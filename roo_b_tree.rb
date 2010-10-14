@@ -25,13 +25,26 @@ class RooBTree
     self.root.full_array.size
   end
   
+  def exists?(value)
+    !self.find(value).nil?
+  end
+  
+  def find(value)
+    @root.find(value.to_s)
+  end
+  
+  def to_s
+    "[#{@root.full_array.join(', ')}]"
+  end
+  
+  private
+  
   # recursively determine which leaf to add this value to. returning false means the method lead to a dead end 
   # i.e. a child leaf was passed in that didn't actually exist. returning nil means the value was found and 
   # shouldn't be added to the Tree.
   def find_insertion_leaf(value, leaf = @root)
     return false if leaf.nil?
     return leaf if leaf.empty?
-    
     
     # walk through the nodes until you find a stored value larger than the value that's
     # being added. Then add it to that leaf's left leaf. If the value is larger than all
@@ -56,26 +69,6 @@ class RooBTree
     # actually exist, so use the leaf that was passed in originally
     # Return nil if insertion_leaf is nil. Otherwise insertion_leaf can either be a Leaf, or false.
     return insertion_leaf.nil? ? nil : (insertion_leaf || leaf)
-  end
-  
-  def remove(value)
-    
-  end
-  
-  def exists?(value)
-    
-  end
-  
-  def explain_nodes
-    puts @root.recursive_explanation
-  end
-  
-  def explain_nodes_in_html
-    @root.recursive_html_explanation
-  end
-  
-  def to_s
-    "[#{@root.full_array.join(', ')}]"
   end
 end
 

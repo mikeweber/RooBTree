@@ -65,7 +65,7 @@ describe Node do
     node.left_leaf = leaf
     node.left_leaf.should_not be_nil
     node.left_leaf.should_not be_empty
-    node.left_leaf.first.value.should == 0
+    node.left_leaf.first.value.should == '0'
   end
   
   it "should know the child leaf to its right" do
@@ -76,7 +76,7 @@ describe Node do
     node.right_leaf = leaf
     node.right_leaf.should_not be_nil
     node.right_leaf.should_not be_empty
-    node.right_leaf.first.value.should == 2
+    node.right_leaf.first.value.should == '2'
   end
   
   it "should let any assigned children leaves know which leaf the child leaf belongs to" do

@@ -48,8 +48,8 @@ describe Leaf do
         
         new_node = Node.new(init_values.max + 1)
         nodes = leaf.to_a + [new_node]
-        median_node = leaf.send(:split!, new_node)
-        median_node.value.should == nodes[nodes.size / 2].value
+        median_node = nodes[nodes.size / 2]
+        leaf << new_node
         median_node.right_leaf.should_not be_nil
         median_node.left_leaf.should_not be_nil
         median_node.left_leaf.values.should == nodes[0..(nodes.size / 2 - 1)].collect { |node| node.value.to_s }
@@ -59,22 +59,45 @@ describe Leaf do
       it "should correctly sort the median node" do
         values = []
         Leaf::MAX_SIZE.times do |i|
-          values << i
+          values << i + 1
         end
         child_leaf = Leaf.new(values.collect { |value| Node.new(value) })
         parent_node = Node.new(values.max + 1)
         parent_node.left_leaf = child_leaf
         parent_leaf = Leaf.new([parent_node])
         parent_leaf.values.should == [parent_node.to_s]
-        temp_values = ([values.min - 1] + values).collect { |value| value.to_s }
+        # Leaves should look like this
+        #       [3]
+        #      /
+        # [1 2]
         node_to_cause_split = Node.new(values.min - 1)
+        string_values = ([node_to_cause_split.value.to_s] + values).collect { |value| value.to_s }
         child_leaf.full?.should be_true
         child_leaf << node_to_cause_split
-        parent_leaf.values.should == [temp_values[Leaf::MAX_SIZE / 2], parent_node.to_s]
+        # Leaves should now look like this
+        #     [1 3]
+        #    /  |
+        # [0]  [2]
+        parent_leaf.values.should == [string_values[Leaf::MAX_SIZE / 2], parent_node.to_s]
         parent_leaf.first.left_leaf.should_not be_nil
-        left_leaf, right_leaf = parent_leaf.first.children
-        left_leaf.values.should == temp_values[0..(Leaf::MAX_SIZE / 2 - 1)]
-        right_leaf.values.should == temp_values[(Leaf::MAX_SIZE / 2 + 1)..-1]
+        parent_leaf[0].right_leaf.should be_nil
+        left_leaf = parent_leaf[0].left_leaf
+        left_leaf.values.should == string_values[0..(Leaf::MAX_SIZE / 2 - 1)]
+        parent_leaf[1].right_leaf.should be_nil
+        right_leaf = parent_leaf[1].left_leaf
+        right_leaf.values.should == string_values[(Leaf::MAX_SIZE / 2 + 1)..-1]
+      end
+      
+      it "should correctly sort a median node into a leaf that already has a node with children" do
+        parent_node = Node.new('m')
+        parent_leaf = Leaf.new([parent_node])
+        parent_node.children = [Leaf.new([Node.new('h'), Node.new('j')]), Leaf.new([Node.new('n')])]
+        parent_leaf.full_array.to_s.should == "hjmn"
+        parent_node.left_leaf << Node.new('k')
+        parent_leaf.values.should == %w(j m)
+        parent_leaf[0].left_leaf.values.should == %w(h)
+        parent_leaf[1].left_leaf.values.should == %w(k)
+        parent_leaf[1].right_leaf.values.should == %w(n)
       end
     end
     

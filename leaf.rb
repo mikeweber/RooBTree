@@ -40,28 +40,25 @@ class Leaf
   def <<(node)
     raise(ClassMismatch, "Only nodes can be added to leaves") unless node.is_a?(Node)
     
-    if self.has_room?
-      index = 0
-      if next_node = self[index]
-        node_value = next_node.value
-        while (node.value > node_value && index < @nodes.size)
-          index += 1
-          if next_node = self[index]
-            node_value = next_node.value
-          end
+    index = 0
+    if next_node = self[index]
+      node_value = next_node.value
+      while (node.value > node_value && index < @nodes.size)
+        index += 1
+        if next_node = self[index]
+          node_value = next_node.value
         end
       end
-      @nodes.insert(index, node)
-      node.owner_leaf = self
-      if index > 0
-        # Unless this node is the first Node in the Leaf, this Node should take over the responsibility of tracking
-        # the previous Node's right leaf as the new Node's left leaf. The position stays the same, but the ownership
-        # stays consistent. All Nodes own the child Leaf to their left, unless they're the last Node in the Leaf. In
-        # that case, they're allowed to track a child Leaf to their right.
-        node.left_leaf ||= @nodes[index - 1].right_leaf
-      end
-    else
-      median_node = split!(node)
+    end
+    @nodes.insert(index, node)
+    
+    # Let the node know which leaf it's in
+    node.owner_leaf = self
+    # Reassign ownership of child leaves
+    reassign_children(node, index)
+    
+    if @nodes.size > Leaf::MAX_SIZE
+      median_node = split!
 
       if self.parent_leaf
         self.parent_leaf << median_node
@@ -74,28 +71,24 @@ class Leaf
     return node
   end
   
-  def recursive_explanation
-    ([self.explanation, '\n'] + @child_leaves.collect { |leaf| leaf.recursive_explanation }).join()
-  end
-  
-  def explanation
-    "[#{self.values.join('|')}]"
-  end
-  
-  def recursive_html_explanation
-    s = "<ul>"
-    self.each do |node|
-      s << node.left_leaf.recursive_html_explanation if node.left_leaf
-      s << "<li>#{node.value}</li>"
-      s << node.right_leaf.recursive_html_explanation if node.last_node? && node.right_leaf
+  def find(value)
+    return nil if self.empty?
+    # walk through the nodes until you find a stored value equal to the value passed in.
+    # If none is found in this leaf, stop when a value larger than the search value
+    # is found. Then search this node's left leaf. If the value is larger than all
+    # of the values in this leaf, search the last node's right leaf.
+    node = self[node_index = 0]
+    while (node && value >= node.value && node_index < self.size)
+      return node.value if node.value == value
+      
+      node = self[node_index += 1]
     end
-    s << "</ul>"
     
-    return s
-  end
-  
-  def html_explanation
-    "<ul>" + self.collect { |node| "<li>#{node.value}<li>" }.join + "</ul>"
+    if node_index < self.size
+      node.left_leaf.find(value) if node.left_leaf
+    else
+      self.last.right_leaf.find(value) if self.last.right_leaf
+    end
   end
   
   def full_array
@@ -122,13 +115,38 @@ class Leaf
   
   private
   
-  def split!(new_node)
-    temp_leaf = (self + [new_node]).sort_by { |node| node.value }
-    median_node_index = (temp_leaf.size / 2)
-    left_node_end = median_node_index - 1
-    right_node_start = median_node_index + 1
-    
-    median_node, temp_left_nodes, temp_right_nodes = [temp_leaf[median_node_index], temp_leaf[0..left_node_end], temp_leaf[right_node_start..-1]]
+  def reassign_children(node, index)
+    if index > 0
+      # Unless this node is the first Node in the Leaf, this Node should take over the responsibility of tracking
+      # the previous Node's right leaf as the new Node's left leaf (unless the node already has a left leaf of its own). The position stays the same, but the ownership
+      # stays consistent. All Nodes own the child Leaf to their left, unless they're the last Node in the Leaf. In
+      # that case, they're allowed to track a child Leaf to their right.
+      node.left_leaf ||= @nodes[index - 1].right_leaf
+      @nodes[index - 1].right_leaf = nil
+    end
+    # if there is a node to right, set that node's left_leaf to this node's right leaf
+    if index + 1 < self.size
+      @nodes[index + 1].left_leaf = node.right_leaf
+      node.right_leaf = nil
+    end
+  end
+  
+  def median_node_index
+    @nodes.size / 2
+  end
+  
+  def left_leaf_end
+    median_node_index - 1
+  end
+  
+  def right_leaf_start
+    median_node_index + 1
+  end
+  
+  def split!
+    median_node, temp_left_nodes, temp_right_nodes = [@nodes[median_node_index], @nodes[0..left_leaf_end], @nodes[right_leaf_start..-1]]
+    # before assigning the median node the children leaves, hand over the median node's left leaf to the node to the left
+    temp_left_nodes.last.right_leaf = median_node.left_leaf unless temp_left_nodes.empty?
     median_node.children = [Leaf.new(temp_left_nodes, self.tree), Leaf.new(temp_right_nodes, self.tree)]
     
     return median_node
