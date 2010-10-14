@@ -40,7 +40,10 @@ describe RooBTree do
   
   # The whole point of this project is to be able to look up values faster than a flat array
   it "should be able to lookup values faster than a normal array" do
-    test_array = %w(g b s z r m y n l x h w j v a c f p q u d k i o t)
+    test_array = []
+    100_000.times do |i|
+      test_array << i
+    end
     tree = RooBTree.new(test_array)
     search_array = (test_array + %w(these are not in either of the arrays)).sort { rand }
     
