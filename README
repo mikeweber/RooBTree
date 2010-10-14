@@ -1,0 +1,5 @@
+This is an implementation of a searchable BTree in pure Ruby. This was purely a
+programming exercise for myself. Normally a BTree would be used to speed up searching
+for values in large datasets. However this implementation is much slower than Ruby's
+underlying C implementation of Array#find. This code is not production worthy and should 
+only be referenced as an example of a BTree implementation.
